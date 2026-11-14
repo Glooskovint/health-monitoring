@@ -5,14 +5,15 @@ A comprehensive health monitoring application with real-time patient monitoring,
 ## Project Structure
 
 ```
-health-monitoring/
-├── backend/          # Python FastAPI backend
-├── frontend/         # React frontend
-├── database/         # Database initialization and seed scripts
-├── deployment/       # Deployment configurations
-├── docs/             # Documentation
-├── scripts/          # Utility scripts
-└── data/             # Data directories
+├── applications/       # Depelopment space
+│   ├── backend/        # Python FastAPI backend
+│   ├── database/       # Database initialization and seed scripts
+│   └── frontend/       # React frontend
+├── documents/          # Documentation
+├── infrastructure/     # Complementary for deployment
+│   ├── data/           # Data directories
+│   ├── nginx/          # Deployment configurations
+│   └── scripts/        # Utility scripts
 ```
 
 ## Quick Start
