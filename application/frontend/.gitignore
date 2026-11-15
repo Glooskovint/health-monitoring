@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Application source (the repository ignores generic lib/ folders)
+!src/lib/
+!src/lib/**
