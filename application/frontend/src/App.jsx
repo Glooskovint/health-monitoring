@@ -1,122 +1,21 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
+﻿import { useEffect, useState } from 'react'
 import './App.css'
-
-function App() {
-  const [count, setCount] = useState(0)
-
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+const request = async (path, options) => { const r=await fetch(path,options); const d=await r.json(); if(!r.ok) throw Error(d.detail || 'Error de conexión'); return d }
+const level={low:'Bajo',medium:'Moderado',high:'Alto',critical:'Crítico'}
+const time=d=>new Date(d).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'})
+function App(){
+ const [patients,setPatients]=useState([]),[selected,setSelected]=useState(''),[search,setSearch]=useState(''),[view,setView]=useState('Monitoreo'),[hours,setHours]=useState(24),[data,setData]=useState(null),[error,setError]=useState(''),[updated,setUpdated]=useState(null),[pending,setPending]=useState(''),[showAll,setShowAll]=useState(false)
+ useEffect(()=>{let live=true;request('/api/demo/patients').then(d=>{if(live){setPatients(d.patients);setSelected(d.patients[0]?.id || '')}}).catch(e=>{if(live)setError(e.message)});return()=>{live=false}},[])
+ useEffect(()=>{if(!selected)return;let live=true,running=false;setData(null);async function refresh(){if(running)return;running=true;try{const start=encodeURIComponent(new Date(Date.now()-hours*3600000).toISOString());const [latest,history,prediction,alerts,status]=await Promise.all([request(`/api/v1/monitoring/patients/${selected}/latest`),request(`/api/v1/monitoring/patients/${selected}/measurements?start_time=${start}&limit=1000`),request(`/api/v1/predictions/patients/${selected}`),request('/api/v1/alerts'),request('/api/v1/system/status')]);if(live){setData({latest,history,prediction,alerts:alerts.alerts,status});setError('');setUpdated(new Date())}}catch(e){if(live)setError(e.message)}finally{running=false}}refresh();const timer=setInterval(refresh,5000);return()=>{live=false;clearInterval(timer)}},[selected,hours])
+ async function acknowledge(id){setPending(id);try{const result=await request(`/api/v1/alerts/${id}/acknowledge`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({acknowledged_by:'00000000-0000-4000-8000-000000000001',notes:'Reconocida en demostración'})});setData(d=>({...d,alerts:d.alerts.map(a=>a.id===id?result:a)}))}catch(e){setError(e.message)}finally{setPending('')}}
+ function exportCsv(){const keys=['timestamp','heart_rate','blood_pressure_systolic','blood_pressure_diastolic','oxygen_saturation','temperature','respiratory_rate'];const url=URL.createObjectURL(new Blob([keys.join(',')+'\n'+data.history.measurements.map(m=>keys.map(k=>m[k]??'').join(',')).join('\n')],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download=`mediciones-${selected}.csv`;a.click();URL.revokeObjectURL(url)}
+ const patient=patients.find(p=>p.id===selected), active=data?.alerts.filter(a=>!a.acknowledged)||[]
+ const visibleAlerts=data?.alerts.filter(a=>(view==='Alertas'||a.patient_id===selected)&&(showAll||!a.acknowledged))||[]
+ const vitals=data?[['♡','Frecuencia cardíaca',data.latest.heart_rate,'lpm'],['↗','Presión arterial',`${data.latest.blood_pressure_systolic??'—'}/${data.latest.blood_pressure_diastolic??'—'}`,'mmHg'],['◉','Saturación de oxígeno',data.latest.oxygen_saturation,'%'],['♧','Temperatura',data.latest.temperature,'°C'],['≋','Frecuencia respiratoria',data.latest.respiratory_rate,'rpm']]:[]
+ const rows=data?[...data.history.measurements].reverse():[], values=rows.map(m=>m.heart_rate).filter(v=>typeof v==='number'),min=Math.min(...values)-10,max=Math.max(...values)+10,points=values.map((v,i)=>`${30+i*740/Math.max(values.length-1,1)},${180-(v-min)/(max-min)*145}`).join(' ')
+ const alerts=<section className="panel"><div className="section-heading"><h2>Alertas {view==='Alertas'?'del sistema':'del paciente'}</h2><label className="check"><input type="checkbox" checked={showAll} onChange={e=>setShowAll(e.target.checked)}/> Incluir reconocidas</label></div>{visibleAlerts.map(a=><div className="alert" key={a.id}><span className="alert-mark">!</span><div><strong>{patients.find(p=>p.id===a.patient_id)?.name}</strong><p>{a.message}</p><small>{time(a.created_at)} · {a.value} / umbral {a.threshold}</small></div><button disabled={a.acknowledged||pending===a.id} onClick={()=>acknowledge(a.id)}>{a.acknowledged?'Reconocida':pending===a.id?'Guardando…':'Reconocer'}</button></div>)}{!visibleAlerts.length&&<p className="empty">✓ No hay alertas pendientes.</p>}</section>
+ return <div className="shell"><aside className="sidebar"><a className="brand" href="/">✚ <span>vitalis<small>HEALTH MONITORING</small></span></a><div className="workspace-label">ESPACIO CLÍNICO</div><nav>{[['Monitoreo','▦'],['Alertas','♧'],['Sistema','◈']].map(([name,icon])=><button key={name} className={`nav ${view===name?'active':''}`} onClick={()=>setView(name)}><span>{icon}</span>{name}{name==='Alertas'&&active.length>0&&<b>{active.length}</b>}</button>)}</nav><div className="sidebar-bottom"><span className="avatar">DE</span><div>Equipo de demostración<small>Entorno local</small></div></div></aside><div className="main"><header><span>Espacio clínico <span className="muted">/ {view}</span></span><span className="demo-badge">● MODO DEMOSTRACIÓN</span></header><main><div className="page-heading"><div className="eyebrow">CUIDADO CONTINUO, MEJORES DECISIONES</div><h1>{view==='Monitoreo'?'Monitoreo de pacientes':view==='Alertas'?'Centro de alertas':'Estado del sistema'}</h1><p>Una visión clara de cada paciente, en un solo lugar.</p></div><div className="notice">Datos y predicciones simulados · Sin uso clínico · Actualización cada 5 segundos</div>{error&&<div className="error" role="alert">{error}. Comprueba que la API esté disponible en el puerto 8000.</div>}<div className="summary"><div><small>Pacientes en seguimiento</small><strong>{String(patients.length).padStart(2,'0')} <span>Pacientes de muestra</span></strong></div><div><small>Alertas pendientes</small><strong>{String(active.length).padStart(2,'0')} <span>Requieren revisión</span></strong></div><div><small>Conexión con la API</small><strong className="connection">{data?'● Conectada':'○ Sin conexión'}<span>{updated?`Última consulta ${time(updated)}`:'Esperando datos'}</span></strong></div></div>{!data&&!error&&<p role="status">Cargando datos de demostración…</p>}
+ {view==='Monitoreo'&&<div className="monitor-layout"><section className="panel patient-list"><h2>Pacientes <span className="count">{patients.length}</span></h2><input aria-label="Buscar pacientes" placeholder="Buscar nombre o historia…" value={search} onChange={e=>setSearch(e.target.value)}/>{patients.filter(p=>`${p.name} ${p.mrn}`.toLowerCase().includes(search.toLowerCase())).map(p=><button key={p.id} className={`patient ${selected===p.id?'selected':''}`} onClick={()=>setSelected(p.id)}><span className="avatar">{p.name.split(' ').map(w=>w[0]).join('')}</span><span><strong>{p.name}</strong><small>{p.mrn} · Hab. {p.room}</small><span className={`pill ${p.risk>.7?'critical':p.risk>.3?'medium':'low'}`}>Riesgo {p.risk>.7?'crítico':p.risk>.3?'moderado':'bajo'}</span></span><span className="chevron">›</span></button>)}</section><div className="patient-detail">{patient&&<div className="patient-heading"><div><h2>{patient.name}</h2><p>{patient.age} años · {patient.mrn} · Habitación {patient.room}</p></div><span className="live">● Seguimiento activo</span></div>}{data&&<><div className="vitals">{vitals.map(([icon,label,value,unit])=><article className="vital" key={label}><div className="vital-icon">{icon}</div><small>{label}</small><strong>{value??'—'}<span>{unit}</span></strong><span className="muted">Último registro · {time(data.latest.timestamp)}</span></article>)}</div><section className="panel"><div className="section-heading"><div><h2>Tendencia de signos vitales</h2><p>Frecuencia cardíaca · latidos por minuto</p></div><div className="ranges">{[1,6,24,168].map(h=><button key={h} className={h===hours?'chosen':''} onClick={()=>setHours(h)}>{h===168?'7d':`${h}h`}</button>)}</div></div>{values.length?<><svg viewBox="0 0 800 215" role="img" aria-label={`Historial cardíaco: mínimo ${Math.min(...values)}, máximo ${Math.max(...values)} latidos por minuto`}>{[40,90,140,185].map(y=><line key={y} x1="30" x2="770" y1={y} y2={y} stroke="#e6edf1" strokeDasharray="4 5"/>)}<polygon points={`30,185 ${points} 770,185`} fill="#e4f6f2"/><polyline points={points} fill="none" stroke="#149786" strokeWidth="3" strokeLinejoin="round"/><text x="30" y="210">{time(rows[0].timestamp)}</text><text x="720" y="210">{time(rows.at(-1).timestamp)}</text></svg><div className="chart-caption"><span>● Frecuencia cardíaca</span><span>Mín. {Math.min(...values)} · Máx. {Math.max(...values)} lpm</span></div></>:<p className="empty">Sin registros para este período.</p>}<button className="text-button" onClick={exportCsv}>↓ Exportar mediciones CSV</button></section><section className="panel risk"><div className="risk-score">{Math.round(data.prediction.risk_score*100)}<small>/ 100</small></div><div><div className="eyebrow">PREDICCIÓN SIMULADA · PRÓXIMAS 24 HORAS</div><h2>Riesgo {level[data.prediction.risk_level].toLowerCase()}</h2><p>{data.prediction.recommendations[0]}</p></div><span className={`pill ${data.prediction.risk_level}`}>{level[data.prediction.risk_level]}</span></section>{alerts}</>}</div></div>}
+ {view==='Alertas'&&data&&alerts}{view==='Sistema'&&data&&<section className="panel"><div className="section-heading"><div><h2>Servicios e infraestructura</h2><p>Base de datos, Redis y modelo de ML no conectados en este prototipo.</p></div><span className="pill medium">Modo limitado</span></div><div className="services">{Object.entries(data.status.services).map(([name,status])=><article key={name}><span className="vital-icon">◈</span><h3>{name}</h3><span className={`pill ${status==='healthy'?'low':'medium'}`}>{status==='healthy'?'Disponible':'No conectado'}</span></article>)}</div></section>}<footer>vitalis <span>Health Monitoring System · Datos ficticios</span></footer></main></div></div>
 }
-
 export default App
