@@ -1,1 +1,57 @@
-﻿:root{font-family:Inter,'Segoe UI',sans-serif;color:#24374b;background:#f5f7fa;font-synthesis:none;font-size:14px;-webkit-font-smoothing:antialiased}*{box-sizing:border-box}body{margin:0}button,input{font:inherit}button,a,input{outline-offset:4px}button{cursor:pointer}button:disabled{opacity:.65;cursor:default}a{color:inherit;text-decoration:none}h1,h2,h3,p{margin:0}h2{font-size:17px;font-weight:650;letter-spacing:-.3px}p{line-height:1.6;color:#768497}small{font-size:12px}svg{width:100%;display:block}svg text{font-size:11px;fill:#8693a1}
+﻿@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&family=Michroma&display=swap');
+
+:root {
+  color-scheme: dark;
+  --surface: #0d1322;
+  --surface-lowest: #080e1d;
+  --surface-low: #151b2b;
+  --surface-container: #191f2f;
+  --surface-high: #242a3a;
+  --surface-highest: #2f3445;
+  --on-surface: #dde2f7;
+  --on-surface-variant: #b9cacb;
+  --outline: #849495;
+  --outline-variant: #3b494b;
+  --deep-space: #0a192f;
+  --infographic-panel: #0b1e3a;
+  --circuit: #4a90e2;
+  --primary: #dbfcff;
+  --cyan: #00f0ff;
+  --glow-cyan: #00e5ff;
+  --secondary: #43edcd;
+  --advisory: #ffb300;
+  --caution: #ff6d00;
+  --critical: #ff2a6d;
+  --error: #ffb4ab;
+  --neural: #8b5cf6;
+  --neural-light: #e1d2ff;
+  --font-body: 'Geist', 'Segoe UI', sans-serif;
+  --font-heading: 'Space Grotesk', 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', Consolas, monospace;
+  --gutter: 1rem;
+  --gutter-lg: 1.5rem;
+  --margin-lg: 2.5rem;
+  --radius: .25rem;
+  font-family: var(--font-body);
+  color: var(--on-surface);
+  background: var(--surface);
+  font-size: 14px;
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
+}
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; }
+button, input { font: inherit; }
+button { cursor: pointer; }
+button:disabled { opacity: .6; cursor: default; }
+button, a, input { outline-offset: 4px; }
+:focus-visible { outline: 2px solid var(--cyan); }
+::selection { background: #00f0ff33; color: var(--primary); }
+a { color: inherit; text-decoration: none; }
+h1, h2, h3, p { margin: 0; }
+h1, h2, h3 { font-family: var(--font-heading); }
+h2 { font-size: 20px; line-height: 28px; font-weight: 600; }
+p { color: var(--on-surface-variant); line-height: 1.6; }
+small { font-size: 12px; }
+svg { width: 100%; display: block; }
+svg text { font-family: var(--font-mono); font-size: 11px; fill: var(--outline); }
