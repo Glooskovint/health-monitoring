@@ -23,6 +23,9 @@ dist-ssr
 *.sln
 *.sw?
 
+# Docker config (copied from infrastructure)
+nginx.conf
+
 # Application source (the repository ignores generic lib/ folders)
 !src/lib/
 !src/lib/**

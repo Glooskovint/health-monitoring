@@ -1,0 +1,117 @@
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: health-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./infrastructure/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - health-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  frontend:
+    build:
+      context: ./application/frontend
+      dockerfile: Dockerfile
+    container_name: health-frontend
+    expose:
+      - "80"
+    networks:
+      - health-network
+    restart: unless-stopped
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  backend:
+    build:
+      context: ./application/backend
+      dockerfile: Dockerfile
+    container_name: health-backend
+    expose:
+      - "8000"
+    env_file:
+      - ./application/backend/.env
+    environment:
+      - DATABASE_URL=postgresql+psycopg://postgres:admin123456@database:5432/eva_health
+      - REDIS_URL=redis://redis:6379/0
+      - CORS_ORIGINS=http://localhost
+    depends_on:
+      database:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - health-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+
+  database:
+    image: postgres:16-alpine
+    container_name: health-database
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=admin123456
+      - POSTGRES_DB=eva_health
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./application/database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "5432:5432"
+    networks:
+      - health-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d eva_health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    container_name: health-redis
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - health-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  health-network:
+    driver: bridge
