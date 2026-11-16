@@ -431,3 +431,9 @@ footer > span:first-child { color: var(--cyan); letter-spacing: .1em; }
  .login-coordinates { font-size:8px; }
  footer { flex-wrap:wrap; }
 }
+.language-selector { display:inline-flex; align-items:center; gap:8px; font-size:12px; color:var(--muted, #a5b9bc); white-space:nowrap; }
+.language-selector select { background:#101c24; color:#e6f1f4; border:1px solid #496269; border-radius:6px; padding:8px 10px; font:inherit; cursor:pointer; }
+.language-selector select:focus-visible { outline:2px solid #00f0ff; outline-offset:3px; }
+.login-side { position:relative; }
+.login-side > .language-selector { position:absolute; right:24px; top:24px; }
+@media(max-width:700px) { .header-right { flex-wrap:wrap; gap:8px; } .login-side { padding-top:80px; } header { flex-wrap:wrap; gap:12px; } }
