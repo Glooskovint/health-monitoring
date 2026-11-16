@@ -1,0 +1,7 @@
+﻿import { JOINTS, POSES } from './rigConfig.js'
+const poseLabels={neutral:'Anatómica',inspection:'Inspección',salute:'Saludo',step:'Paso'}
+export default function PoseControls({pose,onPoseChange,joint,onJointChange,wireframe,onWireframeChange}) {
+  const config=JOINTS[joint],angles=pose[joint]||[0,0,0]
+  function change(axis,value){const next=[...angles];next[axis]=Number(value);onPoseChange({...pose,[joint]:next})}
+  return <div className="human-pose-controls"><div className="human-pose-presets"><span>POSE / RIG CONTROL</span>{Object.entries(POSES).map(([key,value])=><button key={key} type="button" onClick={()=>onPoseChange(value)}>{poseLabels[key]}</button>)}<label><input type="checkbox" checked={wireframe} onChange={e=>onWireframeChange(e.target.checked)}/> Wireframe</label></div><div className="human-joint-controls"><label>Articulación<select value={joint} onChange={e=>onJointChange(e.target.value)}>{Object.entries(JOINTS).map(([key,entry])=><option key={key} value={key}>{entry.label}</option>)}</select></label>{config.limits.map(([min,max],axis)=><label key={axis}>{['Flexión X','Rotación Y','Abducción Z'][axis]}<span><input type="range" aria-label={`${config.label}: ${['flexión','rotación','abducción'][axis]}`} min={min} max={max} step="1" disabled={min===max} value={angles[axis]} onChange={e=>change(axis,e.target.value)}/><output>{angles[axis]}°</output></span></label>)}</div></div>
+}
